@@ -1,0 +1,29 @@
+{
+  "name": "mcp-server-canvas",
+  "version": "1.0.0",
+  "description": "MCP server for Canvas LMS API integration",
+  "type": "module",
+  "bin": {
+    "mcp-server-canvas": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc && shx chmod +x dist/*.js",
+    "prepare": "npm run build",
+    "watch": "tsc --watch",
+    "generate": "smithery generate"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "dotenv": "^16.4.7",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@smithery/cli": "^1.1.54",
+    "@types/node": "^22",
+    "shx": "^0.3.4",
+    "typescript": "^5.6.2"
+  }
+}

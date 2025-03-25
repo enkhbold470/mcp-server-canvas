@@ -1,0 +1,141 @@
+name: canvas-mcp-server
+version: 1.0.0
+description: MCP server for Canvas LMS API integration
+
+environment:
+  - name: CANVAS_BASE_URL
+    description: Canvas LMS instance URL
+    required: true
+  - name: CANVAS_ACCESS_TOKEN
+    description: Canvas API access token
+    required: true
+    secret: true
+
+endpoints:
+  - name: getUserCourses
+    path: /api/v1/users/{userId}/courses
+    method: GET
+    description: Get courses for a specific user
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: include[]
+        in: query
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+            enum: [needs_grading_count]
+      - name: enrollment_state
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [active, invited, completed, rejected]
+    response:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: number
+          name:
+            type: string
+          course_code:
+            type: string
+          workflow_state:
+            type: string
+          needs_grading_count:
+            type: number
+            nullable: true
+          enrollment_state:
+            type: string
+            nullable: true
+
+mcp:
+  tools:
+    - name: get_user_courses
+      description: Get courses for a specific user with optional grading count
+      parameters:
+        user_id:
+          type: string
+          description: Canvas user ID
+          required: true
+        include_grading_count:
+          type: boolean
+          description: Include needs grading count
+          default: false
+        enrollment_state:
+          type: string
+          description: Filter by enrollment state (active, invited, etc)
+          default: active
+      response:
+        type: object
+        properties:
+          content:
+            type: array
+            items:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [text]
+                text:
+                  type: string
+
+  prompts:
+    - name: get-user-courses-help
+      description: Get help with retrieving user courses
+      messages:
+        - role: assistant
+          content:
+            type: text
+            text: |
+              I can help you get courses for a specific Canvas user. The get_user_courses tool accepts these parameters:
+
+              - user_id: (required) The Canvas user ID
+              - include_grading_count: (optional) Set to true to include needs grading count
+              - enrollment_state: (optional) Filter by enrollment state (defaults to 'active')
+        - role: user
+          content:
+            type: text
+            text: How do I get courses with grading count?
+        - role: assistant
+          content:
+            type: text
+            text: |
+              Call get_user_courses with:
+              - user_id: Your Canvas user ID
+              - include_grading_count: true
+
+              Example: get_user_courses with {"user_id": "123", "include_grading_count": true}
+
+typescript:
+  outDir: ./src/generated
+  models:
+    - name: CanvasConfig
+      properties:
+        baseUrl:
+          type: string
+        accessToken:
+          type: string
+    - name: Course
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        course_code:
+          type: string
+        workflow_state:
+          type: string
+        needs_grading_count:
+          type: number
+          optional: true
+        enrollment_state:
+          type: string
+          optional: true
