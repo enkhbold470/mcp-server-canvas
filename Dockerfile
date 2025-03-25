@@ -1,21 +1,24 @@
-FROM node:18-slim
+FROM node:22.12-alpine AS builder
+
+COPY src/ /app/src/
+COPY tsconfig.json /tsconfig.json
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+RUN --mount=type=cache,target=/root/.npm npm install
 
-# Install dependencies
-RUN npm install
+RUN --mount=type=cache,target=/root/.npm-production npm ci --ignore-scripts --omit-dev
 
-# Copy source code
-COPY . .
+FROM node:22-alpine AS release
 
-# Build TypeScript
-RUN npm run build
+COPY --from=builder /app/dist /app/dist
+COPY --from=builder /app/package.json /app/package.json
+COPY --from=builder /app/package-lock.json /app/package-lock.json
 
-# Expose port if needed
-# EXPOSE 3000
+ENV NODE_ENV=production
 
-# Start the server
-CMD ["npm", "start"]
+WORKDIR /app
+
+RUN npm ci --ignore-scripts --omit-dev
+
+ENTRYPOINT ["node", "dist/index.js"]
