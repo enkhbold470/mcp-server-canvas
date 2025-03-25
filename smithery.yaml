@@ -2,60 +2,37 @@ name: canvas-mcp-server
 version: 1.0.0
 description: MCP server for Canvas LMS API integration
 
-environment:
-  - name: CANVAS_BASE_URL
-    description: Canvas LMS instance URL
-    required: true
-  - name: CANVAS_ACCESS_TOKEN
-    description: Canvas API access token
-    required: true
-    secret: true
+# Required Smithery configuration
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required: ["baseUrl", "accessToken"]
+    properties:
+      baseUrl:
+        type: string
+        description: "Canvas LMS instance URL"
+      accessToken:
+        type: string
+        description: "Canvas API access token"
+  commandFunction: |
+    function getCommand(config) {
+      return {
+        command: "npm",
+        args: ["start"],
+        env: {
+          CANVAS_BASE_URL: config.baseUrl,
+          CANVAS_ACCESS_TOKEN: config.accessToken
+        }
+      };
+    }
 
-endpoints:
-  - name: getUserCourses
-    path: /api/v1/users/{userId}/courses
-    method: GET
-    description: Get courses for a specific user
-    parameters:
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: include[]
-        in: query
-        required: false
-        schema:
-          type: array
-          items:
-            type: string
-            enum: [needs_grading_count]
-      - name: enrollment_state
-        in: query
-        required: false
-        schema:
-          type: string
-          enum: [active, invited, completed, rejected]
-    response:
-      type: array
-      items:
-        type: object
-        properties:
-          id:
-            type: number
-          name:
-            type: string
-          course_code:
-            type: string
-          workflow_state:
-            type: string
-          needs_grading_count:
-            type: number
-            nullable: true
-          enrollment_state:
-            type: string
-            nullable: true
+# Build configuration
+build:
+  dockerfile: Dockerfile
+  dockerBuildPath: .
 
+# MCP Server Configuration
 mcp:
   tools:
     - name: get_user_courses
@@ -114,6 +91,54 @@ mcp:
 
               Example: get_user_courses with {"user_id": "123", "include_grading_count": true}
 
+# API Endpoints
+api:
+  endpoints:
+    - name: getUserCourses
+      path: /api/v1/users/{userId}/courses
+      method: GET
+      description: Get courses for a specific user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: include[]
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [needs_grading_count]
+        - name: enrollment_state
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, invited, completed, rejected]
+      response:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: number
+            name:
+              type: string
+            course_code:
+              type: string
+            workflow_state:
+              type: string
+            needs_grading_count:
+              type: number
+              nullable: true
+            enrollment_state:
+              type: string
+              nullable: true
+
+# TypeScript Configuration
 typescript:
   outDir: ./src/generated
   models:
