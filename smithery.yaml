@@ -12,28 +12,34 @@ startCommand:
       baseUrl:
         type: string
         description: "Canvas LMS instance URL"
+        pattern: "^https?://.*"
       accessToken:
         type: string
         description: "Canvas API access token"
+        minLength: 1
   commandFunction: |
     function getCommand(config) {
       return {
-        command: "npm",
-        args: ["start"],
+        command: "node",
+        args: ["dist/index.js"],
         env: {
+          NODE_ENV: "production",
           CANVAS_BASE_URL: config.baseUrl,
-          CANVAS_ACCESS_TOKEN: config.accessToken
+          CANVAS_ACCESS_TOKEN: config.accessToken,
+          MCP_TIMEOUT_MS: "300000"
         }
       };
     }
 
-# Build configuration
+# Build configuration matching Dockerfile
 build:
   dockerfile: Dockerfile
   dockerBuildPath: .
+  buildArgs:
+    NODE_VERSION: "20"
 
-# MCP Server Configuration
-mcp:
+# Server capabilities
+capabilities:
   tools:
     - name: get_user_courses
       description: Get courses for a specific user with optional grading count
@@ -50,6 +56,7 @@ mcp:
           type: string
           description: Filter by enrollment state (active, invited, etc)
           default: active
+          enum: [active, invited, completed, rejected]
       response:
         type: object
         properties:
@@ -91,7 +98,7 @@ mcp:
 
               Example: get_user_courses with {"user_id": "123", "include_grading_count": true}
 
-# API Endpoints
+# API documentation
 api:
   endpoints:
     - name: getUserCourses
@@ -138,29 +145,32 @@ api:
               type: string
               nullable: true
 
-# TypeScript Configuration
-typescript:
-  outDir: ./src/generated
-  models:
-    - name: CanvasConfig
-      properties:
-        baseUrl:
-          type: string
-        accessToken:
-          type: string
-    - name: Course
-      properties:
-        id:
-          type: number
-        name:
-          type: string
-        course_code:
-          type: string
-        workflow_state:
-          type: string
-        needs_grading_count:
-          type: number
-          optional: true
-        enrollment_state:
-          type: string
-          optional: true
+# Development configuration
+development:
+  outDir: ./dist
+  sourceMap: true
+  typescript:
+    strict: true
+    models:
+      - name: CanvasConfig
+        properties:
+          baseUrl:
+            type: string
+          accessToken:
+            type: string
+      - name: Course
+        properties:
+          id:
+            type: number
+          name:
+            type: string
+          course_code:
+            type: string
+          workflow_state:
+            type: string
+          needs_grading_count:
+            type: number
+            optional: true
+          enrollment_state:
+            type: string
+            optional: true
